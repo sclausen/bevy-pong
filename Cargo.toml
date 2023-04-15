@@ -1,0 +1,31 @@
+[package]
+name = "bevy_pong"
+version = "0.1.0"
+authors = ["Sebastian Clausen <github@sebastian-clausen.de>"]
+edition = "2021"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = true
+
+[features]
+dev = ["bevy/dynamic_linking"]
+debug = []
+
+[dependencies]
+bevy = "0.10.1"
+bevy_turborand = "0.5"
+bevy-inspector-egui = "0.18.1"
+sfxr = { path = "../sfxr-rs", features = ["serde"] }
+rodio = "0.17"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+plotters = "0.3"
+plotters-backend = "0.3"
