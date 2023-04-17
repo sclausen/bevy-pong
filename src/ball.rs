@@ -8,7 +8,7 @@ use std::{f32::consts::PI, ops::DerefMut};
 use crate::{collider::Collider, paddle::Paddle, reset::Reset, score::Score, wall::Wall, GameSet, WINDOW_HEIGHT};
 
 const MAX_BOUNCE_ANGLE: f32 = 5.0 * PI / 12.0;
-const BALL_SPEED: f32 = WINDOW_HEIGHT / 1.5;
+const BALL_SPEED: f32 = WINDOW_HEIGHT / 3.0;
 
 #[derive(Component, Debug)]
 pub struct Ball {
@@ -36,9 +36,14 @@ impl Plugin for BallPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_startup_system(Self::setup)
 			.add_event::<CollisionEvent>()
-			.add_system(Self::handle_reset.in_set(GameSet::Reset))
-			.add_system(Self::check_collision.in_set(GameSet::CollisionDetection))
-			.add_system(Self::update_position.in_set(GameSet::Movement));
+			.add_systems(
+				(
+					Self::handle_reset.in_set(GameSet::Reset),
+					Self::check_collision.in_set(GameSet::CollisionDetection),
+					Self::update_position.in_set(GameSet::Movement),
+				)
+					.in_schedule(CoreSchedule::FixedUpdate),
+			);
 	}
 }
 
@@ -118,22 +123,6 @@ impl BallPlugin {
 					};
 				}
 
-				if let Some(wall) = wall {
-					match wall {
-						Wall::Top | Wall::Bottom => collision_events.send(CollisionEvent::Wall),
-						Wall::Right => {
-							score.deref_mut().left += 1;
-							collision_events.send(CollisionEvent::Goal);
-							reset_writer.send(Reset::Soft);
-						}
-						Wall::Left => {
-							score.deref_mut().right += 1;
-							collision_events.send(CollisionEvent::Goal);
-							reset_writer.send(Reset::Soft);
-						}
-					}
-				}
-
 				if paddle.is_some() {
 					debug!("Paddle collision: {:?}", collision);
 
@@ -165,6 +154,24 @@ impl BallPlugin {
 
 					if reflect_y {
 						ball.direction.y = -ball.direction.y;
+					}
+				}
+
+				if let Some(wall) = wall {
+					match wall {
+						Wall::Top | Wall::Bottom => collision_events.send(CollisionEvent::Wall),
+						Wall::Right => {
+							score.deref_mut().left += 1;
+							collision_events.send(CollisionEvent::Goal);
+							reset_writer.send(Reset::Soft);
+							continue;
+						}
+						Wall::Left => {
+							score.deref_mut().right += 1;
+							collision_events.send(CollisionEvent::Goal);
+							reset_writer.send(Reset::Soft);
+							continue;
+						}
 					}
 				}
 			}

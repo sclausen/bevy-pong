@@ -13,10 +13,11 @@ pub struct Paddle {
 impl Paddle {
 	pub const WIDTH: f32 = Wall::WIDTH;
 	pub const HEIGHT: f32 = WINDOW_HEIGHT * 0.2;
-	pub const MARGIN: f32 = Wall::WIDTH * 2.;
+	pub const MARGIN: f32 = Wall::WIDTH * 2.0;
+	pub const SPEED: f32 = WINDOW_HEIGHT / 3.0;
 
-	pub fn new(speed: f32, velocity: Vec2) -> Self {
-		Self { speed, velocity }
+	pub fn new(velocity: Vec2) -> Self {
+		Self { speed: Self::SPEED, velocity }
 	}
 }
 
@@ -24,13 +25,22 @@ pub struct PaddlePlugin;
 impl Plugin for PaddlePlugin {
 	fn build(&self, app: &mut App) {
 		app.add_startup_system(Self::setup)
-			.add_system(Self::handle_reset.in_set(GameSet::Reset))
+			.add_system(
+				Self::handle_reset
+					.in_set(GameSet::Reset)
+					.in_schedule(CoreSchedule::FixedUpdate),
+			)
 			.add_system(
 				Self::handle_input
-					.in_set(GameSet::Movement)
-					.run_if(PongPlugin::is_playing),
+					.in_set(GameSet::Input)
+					.run_if(PongPlugin::is_playing)
+					.in_schedule(CoreSchedule::FixedUpdate),
 			)
-			.add_system(Self::update_position.in_set(GameSet::Movement));
+			.add_system(
+				Self::update_position
+					.in_set(GameSet::Movement)
+					.in_schedule(CoreSchedule::FixedUpdate),
+			);
 	}
 }
 
@@ -39,7 +49,7 @@ impl PaddlePlugin {
 		commands.spawn((
 			Name::new("Paddle Left"),
 			Collider,
-			Paddle::new(WINDOW_HEIGHT * 0.5, Vec2::default()),
+			Paddle::new(Vec2::default()),
 			Player::Left,
 			SpriteBundle {
 				sprite: Sprite {
@@ -57,7 +67,7 @@ impl PaddlePlugin {
 		commands.spawn((
 			Name::new("Paddle Right"),
 			Collider,
-			Paddle::new(WINDOW_HEIGHT * 0.5, Vec2::default()),
+			Paddle::new(Vec2::default()),
 			Player::Right,
 			SpriteBundle {
 				sprite: Sprite {
@@ -80,7 +90,7 @@ impl PaddlePlugin {
 	) {
 		if let Some(Reset::Hard) = reset_reader.iter().last() {
 			for (mut sprite, mut transform, mut paddle, &player) in paddle_query.iter_mut() {
-				paddle.speed = WINDOW_HEIGHT / 3.;
+				paddle.speed = Paddle::SPEED;
 
 				sprite.custom_size = Some(Vec2::new(Paddle::WIDTH, Paddle::HEIGHT));
 
@@ -95,7 +105,7 @@ impl PaddlePlugin {
 	}
 
 	pub fn handle_input(keys: Res<Input<KeyCode>>, mut query: Query<(&mut Paddle, &Player)>) {
-		debug!("Handling input for paddles...");
+		//debug!("Handling input for paddles...");
 		for (mut paddle, player) in query.iter_mut() {
 			let (up_keycode, down_keycode) = player.movement_keys();
 
@@ -115,8 +125,8 @@ impl PaddlePlugin {
 
 		for (paddle, mut transform) in query.iter_mut() {
 			// debug!(
-			//     "Setting paddle ({:?}) y position to {},{}",
-			//     paddle, transform.translation.x, transform.translation.y
+			//	 "Setting paddle ({:?}) y position to {},{}",
+			//	 paddle, transform.translation.x, transform.translation.y
 			// );
 
 			transform.translation.y = (transform.translation.y + delta_seconds * paddle.velocity.y)

@@ -36,6 +36,7 @@ pub enum GameState {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, SystemSet)]
 pub enum GameSet {
+	Input,
 	Movement,
 	CollisionDetection,
 	Reset,
@@ -43,31 +44,30 @@ pub enum GameSet {
 
 pub const WINDOW_HEIGHT: f32 = 720.;
 pub const WINDOW_WIDTH: f32 = 1280.;
+const TIME_STEP: f32 = 1.0 / 60.0;
 
 pub struct PongPlugin;
 impl Plugin for PongPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_startup_system(Self::setup)
-            .add_state::<GameState>()
-            .add_plugin(RngPlugin::default())
-            .add_plugin(ResetPlugin)
-            //.add_plugin(SfxrAudioPlugin)
-            .add_plugin(CentreLinePlugin)
-            .add_plugin(BallPlugin)
-            .add_plugin(PaddlePlugin)
-            .add_plugin(AiPaddlePlugin)
-            .add_plugin(PausePlugin)
-            .add_plugin(ScorePlugin)
-            .add_plugin(SplashScreenPlugin)
-            .add_plugin(WallPlugin)
-            .configure_set(
-                GameSet::CollisionDetection
-                    .before(GameSet::Movement)
-                    .run_if(Self::in_menu_or_playing),
-            )
-            .configure_set(GameSet::Reset.after(GameSet::CollisionDetection))
-            .configure_set(GameSet::CollisionDetection.run_if(Self::in_menu_or_playing))
-            .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)));
+			.add_state::<GameState>()
+			.add_plugin(RngPlugin::default())
+			.add_plugin(ResetPlugin)
+			//.add_plugin(SfxrAudioPlugin)
+			.add_plugin(CentreLinePlugin)
+			.add_plugin(BallPlugin)
+			.add_plugin(PaddlePlugin)
+			.add_plugin(AiPaddlePlugin)
+			.add_plugin(PausePlugin)
+			.add_plugin(ScorePlugin)
+			.add_plugin(SplashScreenPlugin)
+			.add_plugin(WallPlugin)
+			.configure_set(GameSet::Input.before(GameSet::Movement))
+			.configure_set(GameSet::Movement.before(GameSet::CollisionDetection).after(GameSet::Input))
+			.configure_set(GameSet::CollisionDetection.run_if(Self::in_menu_or_playing))
+			.configure_set(GameSet::Reset.after(GameSet::CollisionDetection))
+			.insert_resource(FixedTime::new_from_secs(TIME_STEP))
+			.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)));
 	}
 }
 

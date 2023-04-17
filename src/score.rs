@@ -60,7 +60,7 @@ impl ScorePlugin {
 						Score::default().to_string(),
 						TextStyle {
 							color: Color::WHITE,
-							font_size: 100.0,
+							font_size: 100.,
 							font: asset_server.load("fonts/Pixelzim 3x5.ttf"),
 						},
 					)]),
