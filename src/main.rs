@@ -15,7 +15,7 @@ fn main() {
 	app.add_plugins(
 		DefaultPlugins
 			.set(LogPlugin {
-				filter: "bevy_pong=debug".into(),
+				filter: "bevy_pong=debug,bevy=debug".into(),
 				level: bevy::log::Level::WARN,
 			})
 			.set(AssetPlugin {
@@ -28,6 +28,7 @@ fn main() {
 					resizable: false,
 					resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
 					title: "pong".to_string(),
+					present_mode: bevy::window::PresentMode::Fifo,
 					window_level: WindowLevel::AlwaysOnTop,
 					..default()
 				}),

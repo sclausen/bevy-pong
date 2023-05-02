@@ -5,10 +5,10 @@ use bevy::{
 use bevy_turborand::*;
 use std::{f32::consts::PI, ops::DerefMut};
 
-use crate::{collider::Collider, paddle::Paddle, reset::Reset, score::Score, wall::Wall, GameSet, WINDOW_HEIGHT};
+use crate::{collider::Collider, paddle::Paddle, reset::Reset, score::Score, wall::Wall, GameSet};
 
 const MAX_BOUNCE_ANGLE: f32 = 5.0 * PI / 12.0;
-const BALL_SPEED: f32 = WINDOW_HEIGHT / 3.0;
+const BALL_SPEED: f32 = 400.0;
 
 #[derive(Component, Debug)]
 pub struct Ball {
@@ -42,6 +42,7 @@ impl Plugin for BallPlugin {
 					Self::check_collision.in_set(GameSet::CollisionDetection),
 					Self::update_position.in_set(GameSet::Movement),
 				)
+					.chain()
 					.in_schedule(CoreSchedule::FixedUpdate),
 			);
 	}

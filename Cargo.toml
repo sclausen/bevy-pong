@@ -20,7 +20,7 @@ debug = []
 [dependencies]
 bevy = "0.10.1"
 bevy_turborand = "0.5"
-bevy-inspector-egui = "0.18.1"
+bevy-inspector-egui = "0.18.3"
 sfxr = { git = "https://github.com/sclausen/sfxr-rs", features = ["serde"] }
 rodio = "0.17"
 serde = { version = "1.0", features = ["derive"] }

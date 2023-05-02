@@ -1,4 +1,7 @@
+#[cfg(feature = "debug")]
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+
 use bevy_turborand::RngPlugin;
 
 mod ai_paddle;
@@ -57,17 +60,21 @@ impl Plugin for PongPlugin {
 			.add_plugin(CentreLinePlugin)
 			.add_plugin(BallPlugin)
 			.add_plugin(PaddlePlugin)
-			.add_plugin(AiPaddlePlugin)
+			//.add_plugin(AiPaddlePlugin)
 			.add_plugin(PausePlugin)
 			.add_plugin(ScorePlugin)
 			.add_plugin(SplashScreenPlugin)
 			.add_plugin(WallPlugin)
 			.configure_set(GameSet::Input.before(GameSet::Movement))
-			.configure_set(GameSet::Movement.before(GameSet::CollisionDetection).after(GameSet::Input))
 			.configure_set(GameSet::CollisionDetection.run_if(Self::in_menu_or_playing))
+			.configure_set(GameSet::Movement.after(GameSet::CollisionDetection).after(GameSet::Input))
 			.configure_set(GameSet::Reset.after(GameSet::CollisionDetection))
 			.insert_resource(FixedTime::new_from_secs(TIME_STEP))
 			.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)));
+
+		#[cfg(feature = "debug")]
+		app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+			.add_plugin(LogDiagnosticsPlugin::default())
 	}
 }
 

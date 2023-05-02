@@ -14,10 +14,13 @@ impl Paddle {
 	pub const WIDTH: f32 = Wall::WIDTH;
 	pub const HEIGHT: f32 = WINDOW_HEIGHT * 0.2;
 	pub const MARGIN: f32 = Wall::WIDTH * 2.0;
-	pub const SPEED: f32 = WINDOW_HEIGHT / 3.0;
+	pub const SPEED: f32 = WINDOW_HEIGHT / 2.5;
 
 	pub fn new(velocity: Vec2) -> Self {
-		Self { speed: Self::SPEED, velocity }
+		Self {
+			speed: Self::SPEED,
+			velocity,
+		}
 	}
 }
 
