@@ -163,12 +163,14 @@ impl BallPlugin {
 						Wall::Top | Wall::Bottom => collision_events.send(CollisionEvent::Wall),
 						Wall::Right => {
 							score.deref_mut().left += 1;
+							ball.speed = 0.;
 							collision_events.send(CollisionEvent::Goal);
 							reset_writer.send(Reset::Soft);
 							continue;
 						}
 						Wall::Left => {
 							score.deref_mut().right += 1;
+							ball.speed = 0.;
 							collision_events.send(CollisionEvent::Goal);
 							reset_writer.send(Reset::Soft);
 							continue;
