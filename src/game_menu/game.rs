@@ -30,7 +30,7 @@ impl GamePlugin {
 		display_quality: Res<DisplayQuality>,
 		volume: Res<Volume>,
 	) {
-		let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+		let font = asset_server.load("fonts/Pixelzim 3x5.ttf");
 
 		commands
 			.spawn((

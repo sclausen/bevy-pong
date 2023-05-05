@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{collider::Collider, WINDOW_HEIGHT, WINDOW_WIDTH};
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Eq, PartialEq)]
 pub enum Wall {
 	Top,
 	Bottom,

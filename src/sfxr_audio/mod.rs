@@ -6,6 +6,7 @@ use self::{sfxr_audio_asset_loader::SfxrAudioAssetLoader, sfxr_decoder::SfxrDeco
 
 mod sfxr_audio_asset_loader;
 mod sfxr_decoder;
+mod serde;
 
 #[derive(TypeUuid, Clone, Copy)]
 #[uuid = "3f377deb-f29d-4b81-ab40-b4a7cdaa3036"]

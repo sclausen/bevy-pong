@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-	collider::Collider, player::Player, reset::Reset, wall::Wall, GameSet, PongPlugin, WINDOW_HEIGHT, WINDOW_WIDTH,
-};
+use crate::{collider::Collider, player::Player, reset::Reset, wall::Wall, GameSet, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 #[derive(Debug, Default, Component)]
 pub struct Paddle {
@@ -36,7 +34,6 @@ impl Plugin for PaddlePlugin {
 			.add_system(
 				Self::handle_input
 					.in_set(GameSet::Input)
-					.run_if(PongPlugin::is_playing)
 					.in_schedule(CoreSchedule::FixedUpdate),
 			)
 			.add_system(

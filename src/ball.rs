@@ -5,7 +5,9 @@ use bevy::{
 use bevy_turborand::*;
 use std::{f32::consts::PI, ops::DerefMut};
 
-use crate::{collider::Collider, paddle::Paddle, reset::Reset, score::Score, wall::Wall, GameSet};
+use crate::{
+	collider::Collider, paddle::Paddle, reset::Reset, score::Score, wall::Wall, GameSet, GameState, PongPlugin,
+};
 
 const MAX_BOUNCE_ANGLE: f32 = 5.0 * PI / 12.0;
 const BALL_SPEED: f32 = 400.0;
@@ -21,6 +23,9 @@ pub enum CollisionEvent {
 	Wall,
 	Goal,
 }
+
+#[derive(Component, Deref, DerefMut)]
+pub struct WaitAfterGoalTimer(Timer);
 
 impl Ball {
 	pub fn velocity(&self) -> Vec2 {
@@ -39,8 +44,13 @@ impl Plugin for BallPlugin {
 			.add_systems(
 				(
 					Self::handle_reset.in_set(GameSet::Reset),
-					Self::check_collision.in_set(GameSet::CollisionDetection),
-					Self::update_position.in_set(GameSet::Movement),
+					Self::pause_after_goal,
+					Self::update_position
+						.in_set(GameSet::Movement)
+						.run_if(PongPlugin::is_playing),
+					Self::check_collision
+						.in_set(GameSet::CollisionDetection)
+						.run_if(PongPlugin::is_playing),
 				)
 					.chain()
 					.in_schedule(CoreSchedule::FixedUpdate),
@@ -65,6 +75,8 @@ impl BallPlugin {
 				..default()
 			},
 		));
+
+		commands.spawn(WaitAfterGoalTimer(Timer::from_seconds(2.0, TimerMode::Once)));
 	}
 
 	pub fn handle_reset(
@@ -87,12 +99,14 @@ impl BallPlugin {
 	}
 
 	pub fn check_collision(
-		mut ball_query: Query<(&mut Ball, &Transform, &Sprite)>,
 		collider_query: Query<(&Transform, &Sprite, Option<&Wall>, Option<&Paddle>), With<Collider>>,
+		mut ball_query: Query<(&mut Ball, &Transform, &Sprite)>,
+		mut collision_events: EventWriter<CollisionEvent>,
+		mut last_collision: Local<LastCollision>,
+		mut next_state: ResMut<NextState<GameState>>,
 		mut reset_writer: EventWriter<Reset>,
 		mut score: ResMut<Score>,
-		mut last_collision: Local<LastCollision>,
-		mut collision_events: EventWriter<CollisionEvent>,
+		state: Res<State<GameState>>,
 	) {
 		let (mut ball, ball_transform, ball_sprite) = ball_query.single_mut();
 
@@ -130,7 +144,7 @@ impl BallPlugin {
 					let ball_position = ball_transform.translation;
 					let paddle_position = collider_transform.translation;
 
-					let ball_angle = Self::novel_reflect(&paddle_position, &ball_position);
+					let ball_angle = Self::calculate_bounce_angle(&paddle_position, &ball_position);
 					debug!("Ball angle: {:?}", ball_angle);
 
 					ball.direction = match collision {
@@ -156,26 +170,43 @@ impl BallPlugin {
 					if reflect_y {
 						ball.direction.y = -ball.direction.y;
 					}
-				}
 
-				if let Some(wall) = wall {
-					match wall {
-						Wall::Top | Wall::Bottom => collision_events.send(CollisionEvent::Wall),
-						Wall::Right => {
-							score.deref_mut().left += 1;
-							ball.speed = 0.;
-							collision_events.send(CollisionEvent::Goal);
-							reset_writer.send(Reset::Soft);
-							continue;
-						}
-						Wall::Left => {
-							score.deref_mut().right += 1;
-							ball.speed = 0.;
-							collision_events.send(CollisionEvent::Goal);
-							reset_writer.send(Reset::Soft);
-							continue;
+					if let Some(wall) = wall {
+						match wall {
+							Wall::Top | Wall::Bottom => {
+								collision_events.send(CollisionEvent::Wall);
+							}
+							Wall::Right | Wall::Left => {
+								if *wall == Wall::Right {
+									score.deref_mut().left += 1;
+								} else if *wall == Wall::Left {
+									score.deref_mut().right += 1;
+								}
+								collision_events.send(CollisionEvent::Goal);
+								ball.speed = 0.;
+								reset_writer.send(Reset::Soft);
+								if state.0 == GameState::Playing {
+									next_state.set(GameState::WaitBeforeRound);
+								}
+							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	fn pause_after_goal(
+		mut next_state: ResMut<NextState<GameState>>,
+		mut query: Query<&mut WaitAfterGoalTimer>,
+		state: Res<State<GameState>>,
+		time: Res<Time>,
+	) {
+		if state.0 == GameState::WaitBeforeRound {
+			for mut timer in &mut query {
+				if timer.tick(time.delta()).just_finished() {
+					timer.reset();
+					next_state.set(GameState::Playing);
 				}
 			}
 		}
@@ -187,21 +218,10 @@ impl BallPlugin {
 		}
 	}
 
-	pub fn novel_reflect(paddle_pos: &Vec3, hit_pos: &Vec3) -> Vec2 {
+	pub fn calculate_bounce_angle(paddle_pos: &Vec3, hit_pos: &Vec3) -> Vec2 {
 		let relative_ball_pos = *hit_pos - *paddle_pos;
-		debug!("Relative hit pos: {:?}", relative_ball_pos);
-
 		let normalized_relative_ball_pos = relative_ball_pos / Paddle::HEIGHT;
-
-		debug!("Normalized relative hit pos: {:?}", normalized_relative_ball_pos);
-
 		let bounce_angle = normalized_relative_ball_pos * MAX_BOUNCE_ANGLE;
-		debug!("Bounce angle: {:?} (max: {:?}", bounce_angle, MAX_BOUNCE_ANGLE);
-
-		let ball_angle = Vec2::new(f32::cos(bounce_angle.x), -f32::sin(bounce_angle.y)).normalize();
-
-		debug!("Ball angle: {:?}", ball_angle);
-
-		ball_angle
+		Vec2::new(f32::cos(bounce_angle.x), -f32::sin(bounce_angle.y)).normalize()
 	}
 }

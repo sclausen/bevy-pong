@@ -33,6 +33,7 @@ use wall::WallPlugin;
 pub enum GameState {
 	#[default]
 	Menu,
+	WaitBeforeRound,
 	Playing,
 	Paused,
 }
@@ -56,7 +57,7 @@ impl Plugin for PongPlugin {
 			.add_state::<GameState>()
 			.add_plugin(RngPlugin::default())
 			.add_plugin(ResetPlugin)
-			//.add_plugin(SfxrAudioPlugin)
+			.add_plugin(SfxrAudioPlugin)
 			.add_plugin(CentreLinePlugin)
 			.add_plugin(BallPlugin)
 			.add_plugin(PaddlePlugin)
@@ -66,7 +67,7 @@ impl Plugin for PongPlugin {
 			.add_plugin(SplashScreenPlugin)
 			.add_plugin(WallPlugin)
 			.configure_set(GameSet::Input.before(GameSet::Movement))
-			.configure_set(GameSet::CollisionDetection.run_if(Self::in_menu_or_playing))
+			.configure_set(GameSet::CollisionDetection)
 			.configure_set(GameSet::Movement.after(GameSet::CollisionDetection).after(GameSet::Input))
 			.configure_set(GameSet::Reset.after(GameSet::CollisionDetection))
 			.insert_resource(FixedTime::new_from_secs(TIME_STEP))

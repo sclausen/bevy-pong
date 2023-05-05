@@ -63,7 +63,7 @@ impl SplashScreenPlugin {
 	) {
 		for event in keyboard_input_event_reader.iter() {
 			if state.0 == GameState::Menu && event.state == ButtonState::Pressed {
-				next_state.set(GameState::Playing);
+				next_state.set(GameState::WaitBeforeRound);
 			}
 		}
 	}
